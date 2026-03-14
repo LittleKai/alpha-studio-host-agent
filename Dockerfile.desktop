@@ -1,0 +1,56 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV VNC_PASSWORD=alphadesktop
+ENV DISPLAY=:1
+ENV RESOLUTION=1920x1080x24
+
+# Install base packages
+RUN apt-get update && apt-get install -y \
+    xfce4 \
+    xfce4-terminal \
+    dbus-x11 \
+    x11vnc \
+    xvfb \
+    novnc \
+    websockify \
+    wget \
+    curl \
+    git \
+    python3 \
+    python3-pip \
+    firefox \
+    supervisor \
+    net-tools \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Google Chrome
+RUN wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+    && apt-get update \
+    && apt-get install -y /tmp/chrome.deb \
+    && rm /tmp/chrome.deb \
+    && apt-get clean
+
+# Create non-root user
+RUN useradd -m -s /bin/bash student \
+    && echo "student:student" | chpasswd
+
+# Set up VNC password
+RUN mkdir -p /home/student/.vnc \
+    && x11vnc -storepasswd $VNC_PASSWORD /home/student/.vnc/passwd \
+    && chown -R student:student /home/student
+
+# Copy startup script
+COPY startup.sh /startup.sh
+RUN chmod +x /startup.sh
+
+# noVNC web interface
+RUN ln -s /usr/share/novnc/vnc.html /usr/share/novnc/index.html
+
+EXPOSE 6080
+
+USER student
+WORKDIR /home/student
+
+CMD ["/startup.sh"]

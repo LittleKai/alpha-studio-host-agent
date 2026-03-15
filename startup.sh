@@ -23,7 +23,13 @@ xset s noblank
 pkill xfce4-screensaver 2>/dev/null || true
 
 # Auto-launch Chrome browser
-google-chrome-stable --no-sandbox --disable-gpu --start-maximized --password-store=basic --new-window "https://www.google.com" &
+DISPLAY=:1 google-chrome-stable \
+  --no-sandbox \
+  --disable-dev-shm-usage \
+  --no-first-run \
+  --password-store=basic \
+  --start-maximized \
+  "https://www.google.com" &
 
 echo "Desktop environment ready"
 echo "  VNC: port 5900"

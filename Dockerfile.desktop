@@ -41,6 +41,32 @@ RUN mkdir -p /home/student/.vnc \
     && x11vnc -storepasswd $VNC_PASSWORD /home/student/.vnc/passwd \
     && chown -R student:student /home/student
 
+# Create desktop shortcuts
+RUN mkdir -p /home/student/Desktop \
+    && cat > /home/student/Desktop/chrome.desktop << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Google Chrome
+Exec=google-chrome-stable --no-sandbox --disable-dev-shm-usage --password-store=basic %U
+Icon=google-chrome
+Terminal=false
+Categories=Network;WebBrowser;
+EOF
+    && cat > /home/student/Desktop/firefox.desktop << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Firefox
+Exec=firefox %u
+Icon=firefox
+Terminal=false
+Categories=Network;WebBrowser;
+EOF
+    && chmod +x /home/student/Desktop/chrome.desktop \
+    && chmod +x /home/student/Desktop/firefox.desktop \
+    && chown -R student:student /home/student/Desktop
+
 # Copy startup script
 COPY startup.sh /startup.sh
 RUN chmod +x /startup.sh

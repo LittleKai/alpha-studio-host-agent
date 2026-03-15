@@ -1,0 +1,192 @@
+﻿● Hướng dẫn cài Ubuntu Server 22.04 LTS cho Host Agent
+
+  ---
+  Bước 1: Tải ISO                                                                                                       
+  Tải Ubuntu Server 22.04 LTS từ trang chính thức:                                                                        https://ubuntu.com/download/server
+  Chọn Ubuntu Server 22.04.x LTS → Download
+
+  ---
+  Bước 2: Tạo USB Boot
+
+  Dùng Rufus (Windows):
+  1. Tải Rufus: https://rufus.ie
+  2. Cắm USB ≥ 8GB
+  3. Mở Rufus → chọn ISO vừa tải
+  4. Partition scheme: GPT (nếu máy UEFI) hoặc MBR (nếu Legacy)
+  5. Click Start → chờ xong
+
+  ---
+  Bước 3: Boot từ USB
+
+  1. Cắm USB vào máy Agent
+  2. Khởi động máy → bấm phím boot menu (thường là F2, F12, Del, hoặc Esc tùy hãng)
+  3. Chọn boot từ USB
+
+  ---
+  Bước 4: Cài Ubuntu Server
+
+  4.1 — Language & Keyboard
+
+  - Language: English
+  - Keyboard: English (US)
+
+  4.2 — Network
+
+  - Nếu có DHCP: tự động lấy IP
+  - Nếu cần IP tĩnh (khuyến nghị cho server):
+    - Chọn interface → Edit IPv4 → Manual
+    - Điền: Subnet, Address, Gateway, DNS (8.8.8.8)
+
+  4.3 — Storage
+
+  - Chọn Use entire disk (đơn giản nhất)
+  - Bỏ chọn LVM nếu không cần
+  - Confirm → Done
+
+  4.4 — Profile Setup
+
+  Your name:    alpha         
+  Server name:  alpha-host-01  (thay đổi theo số máy)
+  Username:     alpha
+  Password:     [đặt mật khẩu mạnh]
+
+  4.5 — SSH
+
+  - Bắt buộc tick: Install OpenSSH server ✅
+  - Cho phép SSH từ xa để quản lý sau này
+
+  4.6 — Snap packages
+
+  - Bỏ qua hết → Done
+
+  4.7 — Cài đặt
+
+  - Chờ cài xong → Reboot Now
+  - Rút USB khi máy khởi động lại
+
+  ---
+  Bước 5: Sau khi cài xong — Cài Docker
+
+  SSH vào máy hoặc đăng nhập trực tiếp, rồi chạy lần lượt:
+
+  # Cập nhật hệ thống
+  sudo apt update && sudo apt upgrade -y
+
+  # Cài dependencies
+  sudo apt install -y ca-certificates curl gnupg lsb-release
+
+  # Thêm Docker GPG key
+  sudo install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+    sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+  # Thêm Docker repo
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+    https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
+    sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+  # Cài Docker
+  sudo apt update
+  sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+  # Cho phép user hiện tại chạy Docker không cần sudo
+  sudo usermod -aG docker $USER
+  newgrp docker
+
+  # Kiểm tra
+  docker --version
+  docker run hello-world
+
+  ---
+  Bước 6: Cài Node.js
+
+  # Dùng NodeSource (Node 20 LTS)
+  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+  sudo apt install -y nodejs
+
+  # Kiểm tra
+  node --version   # v20.x.x
+  npm --version
+
+  ---
+  Bước 7: Deploy Host Agent
+
+  # Clone hoặc copy code lên máy
+  git clone https://github.com/LittleKai/alpha-studio-host-agent /opt/alpha-agent
+  cd /opt/alpha-agent
+
+  # Cài dependencies
+  sudo npm install
+
+  # Tạo file .env
+  sudo cp .env.example .env
+  sudo nano .env
+
+  Điền vào .env:
+  AGENT_SECRET=your_secret_here
+  BACKEND_URL=http://<backend-ip>:3001/api
+  MACHINE_ID=host-machine-01
+  HOST_IP=<ip-của-máy-này>
+  PORT=4000
+
+
+  ---
+  Bước 8: Chạy Agent tự động khi boot (systemd)
+
+  sudo nano /etc/systemd/system/alpha-agent.service
+
+  [Unit]
+  Description=Alpha Studio Host Agent
+  After=network.target docker.service
+  Requires=docker.service
+
+  [Service]
+  Type=simple
+  User=alpha
+  WorkingDirectory=/opt/alpha-agent
+  ExecStart=/usr/bin/node src/index.js
+  Restart=always
+  RestartSec=10
+  EnvironmentFile=/opt/alpha-agent/.env
+
+  [Install]
+  WantedBy=multi-user.target
+
+  sudo systemctl daemon-reload
+  sudo systemctl enable alpha-agent
+  sudo systemctl start alpha-agent
+
+  # Kiểm tra
+  sudo systemctl status alpha-agent
+
+
+  ---
+  Bước 9: Build Desktop Docker Image
+
+  cd /opt/alpha-agent/alpha-studio-host-agent
+  docker build -f Dockerfile.desktop -t alpha-desktop:latest .
+
+  Bước này mất 10-20 phút lần đầu.
+
+  ---
+  Checklist hoàn thành
+
+  - Ubuntu Server 22.04 đã cài
+  - SSH hoạt động
+  - Docker chạy được
+  - Node.js 20 đã cài
+  - .env đã điền đúng
+  - alpha-agent service chạy tự động
+  - alpha-desktop:latest image đã build xong
+  - Máy Backend có thể gọi http://<host-ip>:4000/api/health → trả về OK
+
+   Bước 10 — Đăng ký máy trong Admin Panel
+
+
+    1. Đăng nhập Admin Panel trên Frontend
+    2. Vào tab Cloud / Máy chủ
+    3. Thêm máy mới với thông tin:
+      - Machine ID: đúng với MACHINE_ID trong .env
+      - Agent URL: http://<HOST_IP>:4000
+      - Agent Secret: đúng với AGENT_SECRET trong .env

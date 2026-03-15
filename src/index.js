@@ -82,7 +82,7 @@ app.post('/api/sessions/create', authMiddleware, async (req, res) => {
         // Wait for container to be ready (noVNC takes a moment)
         await new Promise(resolve => setTimeout(resolve, 3000));
 
-        const noVncUrl = `http://${HOST_IP}:${port}/vnc.html?autoconnect=true&resize=remote`;
+        const noVncUrl = `http://${HOST_IP}:${port}/vnc.html?autoconnect=true&resize=remote&password=alphadesktop`;
 
         console.log(`[Create] Container ${containerId.substring(0, 12)} on port ${port}`);
 

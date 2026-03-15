@@ -16,6 +16,12 @@ sleep 1
 websockify --web /usr/share/novnc 6080 localhost:5900 &
 sleep 2
 
+# Disable screensaver and screen lock
+xset s off
+xset -dpms
+xset s noblank
+pkill xfce4-screensaver 2>/dev/null || true
+
 # Auto-launch Chrome browser
 google-chrome-stable --no-sandbox --disable-gpu --start-maximized --password-store=basic --new-window "https://www.google.com" &
 

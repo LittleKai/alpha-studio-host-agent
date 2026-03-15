@@ -17,7 +17,7 @@ websockify --web /usr/share/novnc 6080 localhost:5900 &
 sleep 2
 
 # Auto-launch Chrome browser
-google-chrome-stable --no-sandbox --disable-gpu --start-maximized --new-window "https://www.google.com" &
+google-chrome-stable --no-sandbox --disable-gpu --start-maximized --password-store=basic --new-window "https://www.google.com" &
 
 echo "Desktop environment ready"
 echo "  VNC: port 5900"

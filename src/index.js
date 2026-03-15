@@ -63,6 +63,7 @@ app.post('/api/sessions/create', authMiddleware, async (req, res) => {
             '--cpus=2',
             '--memory=4g',
             '--shm-size=512m',
+            '--gpus all',
             'alpha-desktop:latest'
         ].join(' ');
 

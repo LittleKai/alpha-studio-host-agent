@@ -19,7 +19,6 @@ RUN apt-get update && apt-get install -y \
     git \
     python3 \
     python3-pip \
-    firefox \
     supervisor \
     net-tools \
     && apt-get clean \
@@ -44,9 +43,7 @@ RUN mkdir -p /home/student/.vnc \
 # Create desktop shortcuts
 RUN mkdir -p /home/student/Desktop \
     && printf '[Desktop Entry]\nVersion=1.0\nType=Application\nName=Google Chrome\nExec=google-chrome-stable --no-sandbox --disable-dev-shm-usage --password-store=basic %%U\nIcon=google-chrome\nTerminal=false\nCategories=Network;WebBrowser;\n' > /home/student/Desktop/chrome.desktop \
-    && printf '[Desktop Entry]\nVersion=1.0\nType=Application\nName=Firefox\nExec=firefox %%u\nIcon=firefox\nTerminal=false\nCategories=Network;WebBrowser;\n' > /home/student/Desktop/firefox.desktop \
     && chmod +x /home/student/Desktop/chrome.desktop \
-    && chmod +x /home/student/Desktop/firefox.desktop \
     && chown -R student:student /home/student/Desktop
 
 # Copy startup script

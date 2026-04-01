@@ -1,9 +1,11 @@
 node_modules
 .env
 env_alls.txt
-/.claude
+
 FIX_PORT_FORWARDING_VNPT.md
 HUONG_DAN_CAI_DAT_HOAN_CHINH.md
 HUONG_DAN_REMOTE_NHIEU_MAY.md
 SETUP_GUIDE.md
 SETUP_GUIDE_LINUX.md
+
+/.claude

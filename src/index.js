@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { execSync, exec } from 'child_process';
+import crypto from 'crypto';
 import si from 'systeminformation';
 
 dotenv.config();
@@ -19,14 +20,19 @@ if (!AGENT_SECRET || !BACKEND_URL || !MACHINE_ID) {
 
 app.use(express.json());
 
-// Secret-based auth middleware
+// Secret-based auth middleware (constant-time comparison)
 const authMiddleware = (req, res, next) => {
     const secret = req.headers['x-agent-secret'];
-    if (secret !== AGENT_SECRET) {
+    const a = Buffer.from(String(secret || ''));
+    const b = Buffer.from(AGENT_SECRET);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
         return res.status(403).json({ success: false, message: 'Invalid secret' });
     }
     next();
 };
+
+// Docker container IDs/names only — blocks shell metacharacters
+const isValidContainerId = (id) => /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/.test(id);
 
 // Track used ports
 const usedPorts = new Set();
@@ -105,6 +111,10 @@ app.post('/api/sessions/create', authMiddleware, async (req, res) => {
 app.post('/api/sessions/:containerId/destroy', authMiddleware, async (req, res) => {
     try {
         const { containerId } = req.params;
+
+        if (!isValidContainerId(containerId)) {
+            return res.status(400).json({ success: false, message: 'Invalid container id' });
+        }
 
         // Get container port before stopping
         try {
